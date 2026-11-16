@@ -1,563 +1,183 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ClearLegal AI</title>
-
-    <link rel="stylesheet" href="/static/style.css">
-
-</head>
-
-<body>
-
-<header class="chat-header">
-
-    <div>
-        <h2>ClearLegal AI</h2>
-        <p>General Legal Information Assistant</p>
-    </div>
-
-    <a href="/">Home</a>
-
-</header>
-
-<main class="chat-page">
-
-    <div class="upload-container">
-
-        <input
-            type="file"
-            id="pdfFile"
-            accept=".pdf"
-        >
-
-        <button id="uploadBtn">
-            Upload PDF
-        </button>
-
-        <p id="uploadStatus"></p>
-
-    </div>
-
-    <div id="messages" class="messages">
-
-        <div class="message bot">
-            Hello! Upload a legal document or ask a legal question.
-        </div>
-
-    </div>
-
-</main>
-
-<footer class="chat-input">
-
-    <input
-        id="message"
-        type="text"
-        placeholder="Ask a legal question..."
-    >
-
-    <button id="send">
-        Send
-    </button>
-
-</footer>
-
-<script>
-
-const messages = document.getElementById("messages");
-const input = document.getElementById("message");
-const send = document.getElementById("send");
-
-const pdfFile = document.getElementById("pdfFile");
-const uploadBtn = document.getElementById("uploadBtn");
-const uploadStatus = document.getElementById("uploadStatus");
-
-function addMessage(text, type) {
-
-    const div = document.createElement("div");
-
-    div.className = `message ${type}`;
-
-    div.textContent = text;
-
-    messages.appendChild(div);
-
-    messages.scrollTop = messages.scrollHeight;
-
-}
-
-async function uploadPDF() {
-
-    if (!pdfFile.files.length) {
-
-        uploadStatus.textContent = "Please choose a PDF.";
-
-        return;
-
-    }
-
-    const formData = new FormData();
-
-    formData.append("file", pdfFile.files[0]);
-
-    uploadStatus.textContent = "Uploading PDF...";
-
-    try {
-
-        const response = await fetch("/upload", {
-
-            method: "POST",
-
-            body: formData
-
-        });
-
-        const data = await response.json();
-
-        uploadStatus.textContent = data.message;
-
-        addMessage("Document uploaded successfully.", "bot");
-
-    }
-
-    catch {
-
-        uploadStatus.textContent = "Upload failed.";
-
-        addMessage("Unable to upload document.", "bot");
-
-    }
-
-}
-
-async function sendMessage() {
-
-    const text = input.value.trim();
-
-    if (!text)
-        return;
-
-    addMessage(text, "user");
-
-    input.value = "";
-
-    try {
-
-        const response = await fetch("/api/chat", {
-
-            method: "POST",
-
-            headers: {
-
-                "Content-Type": "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-                message: text
-
-            })
-
-        });
-
-        const data = await response.json();
-
-        addMessage(data.reply, "bot");
-
-    }
-
-    catch {
-
-        addMessage(
-            "Unable to contact the server.",
-            "bot"
-        );
-
-    }
-
-}
-
-uploadBtn.onclick = uploadPDF;
-
-send.onclick = sendMessage;
-
-input.addEventListener("keypress", (e) => {
-
-    if (e.key === "Enter") {
-
-        sendMessage();
-
-    }
-
-});
-
-</script>
-
-</body>
-
-</html> -->
-
-
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ClearLegal AI</title>
-
-    <link rel="stylesheet" href="/static/style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1530">
+  <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+  <title>Chat — ClearLegal AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
+<body class="chat-body">
+  <header class="chat-topbar">
+    <a class="brand" href="/"><span class="brand-mark">CL</span><span>ClearLegal<span class="brand-accent">AI</span></span></a>
+    <div class="chat-topbar-right"><span class="secure-label"><i></i> AI LEGAL ASSISTANT</span><a href="/" class="back-home">← Home</a></div>
+  </header>
 
-<body>
+  <main class="chat-layout">
+    <aside class="chat-sidebar">
+      <div class="sidebar-intro">
+        <div class="sidebar-icon">✧</div>
+        <h1>Your legal<br>clarity space.</h1>
+        <p>Ask a question or upload a document to get started.</p>
+      </div>
+      <div class="upload-panel">
+        <div class="upload-panel-heading"><span class="upload-symbol">▤</span><div><strong>Ask about a document</strong><small>PDF files only</small></div></div>
+        <label for="pdfFile" class="file-drop">
+          <span class="file-drop-icon">↑</span>
+          <strong>Choose a PDF</strong>
+          <small>Browse files from your device</small>
+        </label>
+        <input id="pdfFile" type="file" accept=".pdf,application/pdf" class="visually-hidden">
+        <div id="fileName" class="file-name">No file selected</div>
+        <button id="uploadBtn" class="button button-upload" type="button">Upload document <span>→</span></button>
+        <p id="uploadStatus" class="upload-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="sidebar-tip"><span>✦</span><p><strong>Tip</strong> Try asking for a summary, payment terms, important dates, or an explanation of a specific clause.</p></div>
+      <div class="sidebar-disclaimer">For general information only. Not a substitute for professional legal advice.</div>
+    </aside>
 
-<header class="chat-header">
-
-    <div class="header-left">
-
-        <div class="logo-circle">
-            ⚖️
+    <section class="chat-main" aria-label="Chat conversation">
+      <div class="conversation-heading">
+        <div><span class="conversation-kicker">YOUR CONVERSATION</span><h2>Legal assistant</h2></div>
+        <span class="conversation-status"><i></i> Ready to help</span>
+      </div>
+      <div id="messages" class="messages" role="log" aria-live="polite">
+        <div class="welcome-card">
+          <div class="welcome-mark">✧</div>
+          <span class="welcome-kicker">WELCOME TO CLEARLEGAL AI</span>
+          <h2>What would you<br>like to understand?</h2>
+          <p>Ask a general legal question or upload a PDF to explore its contents.</p>
+          <div class="suggestion-list">
+            <button type="button" class="suggestion" data-prompt="Summarise this agreement."><span>▤</span> Summarise this agreement <b>↗</b></button>
+            <button type="button" class="suggestion" data-prompt="What are the payment terms?"><span>₹</span> Explain the payment terms <b>↗</b></button>
+            <button type="button" class="suggestion" data-prompt="Explain this clause in simple language."><span>✧</span> Explain a legal clause <b>↗</b></button>
+          </div>
         </div>
-
-        <div>
-
-            <h2>ClearLegal AI</h2>
-
-            <p>
-                AI-powered Legal Information Assistant
-            </p>
-
-        </div>
-
-    </div>
-
-    <a href="/" class="home-btn">
-        Home
-    </a>
-
-</header>
-
-<main class="chat-page">
-
-    <section class="upload-container">
-
-        <h3>
-            Upload Legal Document
-        </h3>
-
-        <p class="upload-subtitle">
-            Upload a PDF and ask questions about its contents.
-        </p>
-
-        <div class="upload-card">
-
-            <label
-                for="pdfFile"
-                class="choose-file-btn">
-
-                📄 Choose PDF
-
-            </label>
-
-            <input
-                id="pdfFile"
-                type="file"
-                accept=".pdf"
-                hidden
-            >
-
-            <span id="fileName">
-                No file selected
-            </span>
-
-            <button
-                id="uploadBtn"
-                type="button">
-
-                Upload PDF
-
-            </button>
-
-        </div>
-
-        <p id="uploadStatus"></p>
-
+      </div>
+      <div class="chat-composer-wrap">
+        <form id="chatForm" class="chat-composer">
+          <input id="message" type="text" autocomplete="off" placeholder="Type your legal question..." aria-label="Your message">
+          <button id="send" type="submit" aria-label="Send message"><span>↑</span></button>
+        </form>
+        <p class="composer-note">AI can make mistakes. Verify important information with a qualified legal professional.</p>
+      </div>
     </section>
+  </main>
 
-    <section
-        id="messages"
-        class="messages">
+  <script>
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("message");
+    const send = document.getElementById("send");
+    const pdfFile = document.getElementById("pdfFile");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const uploadStatus = document.getElementById("uploadStatus");
+    const fileName = document.getElementById("fileName");
+    const chatForm = document.getElementById("chatForm");
 
-        <div class="message bot">
+    pdfFile.addEventListener("change", () => {
+      fileName.textContent = pdfFile.files.length ? pdfFile.files[0].name : "No file selected";
+      fileName.classList.toggle("has-file", pdfFile.files.length > 0);
+      uploadStatus.textContent = "";
+    });
 
-            <strong>
-                Welcome to ClearLegal AI
-            </strong>
-
-            <br><br>
-
-            I can answer general legal questions
-            and also answer questions based on
-            your uploaded legal PDF.
-
-            <br><br>
-
-            <b>Examples</b>
-
-            <ul>
-
-                <li>
-                    Summarise this agreement.
-                </li>
-
-                <li>
-                    What are the payment terms?
-                </li>
-
-                <li>
-                    Explain this clause.
-                </li>
-
-                <li>
-                    What happens if either party breaches the contract?
-                </li>
-
-            </ul>
-
-        </div>
-
-    </section>
-
-</main>
-
-<footer class="chat-input">
-
-    <input
-        id="message"
-        type="text"
-        autocomplete="off"
-        placeholder="Ask a legal question..."
-    >
-
-    <button
-        id="send"
-        type="button">
-
-        Send
-
-    </button>
-
-</footer>
-
-<script>
-
-const messages = document.getElementById("messages");
-
-const input = document.getElementById("message");
-
-const send = document.getElementById("send");
-
-const pdfFile = document.getElementById("pdfFile");
-
-const uploadBtn = document.getElementById("uploadBtn");
-
-const uploadStatus = document.getElementById("uploadStatus");
-
-const fileName = document.getElementById("fileName");
-
-pdfFile.addEventListener("change", () => {
-
-    if (pdfFile.files.length) {
-
-        fileName.textContent = pdfFile.files[0].name;
-
+    function errorText(data, fallback) {
+      const detail = data && (data.detail || data.message);
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) return detail.map((d) => d.msg).filter(Boolean).join(" ") || fallback;
+      return fallback;
     }
 
-    else {
-
-        fileName.textContent = "No file selected";
-
+    function addMessage(text, type) {
+      const div = document.createElement("div");
+      div.className = "message " + type;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
     }
 
-});
-
-function addMessage(text, type) {
-
-    const div = document.createElement("div");
-
-    div.className = "message " + type;
-
-    div.textContent = text;
-
-    messages.appendChild(div);
-
-    messages.scrollTop = messages.scrollHeight;
-
-}
-
-function showTyping() {
-
-    const div = document.createElement("div");
-
-    div.className = "message bot";
-
-    div.id = "typing";
-
-    div.textContent = "Thinking...";
-
-    messages.appendChild(div);
-
-    messages.scrollTop = messages.scrollHeight;
-
-}
-
-function removeTyping() {
-
-    const typing = document.getElementById("typing");
-
-    if (typing) {
-
-        typing.remove();
-
+    function showTyping() {
+      const div = document.createElement("div");
+      div.className = "message bot typing-message";
+      div.id = "typing";
+      div.textContent = "Thinking…";
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
     }
 
-}
-async function uploadPDF() {
+    function removeTyping() {
+      const typing = document.getElementById("typing");
+      if (typing) typing.remove();
+    }
 
-    if (!pdfFile.files.length) {
-
+    async function uploadPDF() {
+      if (!pdfFile.files.length) {
         uploadStatus.textContent = "Please choose a PDF first.";
-
+        uploadStatus.className = "upload-status error";
         return;
-
+      }
+      const formData = new FormData();
+      formData.append("file", pdfFile.files[0]);
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = "Uploading…";
+      uploadStatus.textContent = "Uploading your document…";
+      uploadStatus.className = "upload-status";
+      try {
+        const response = await fetch("/upload", { method: "POST", body: formData });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(errorText(data, "Upload failed."));
+        uploadStatus.textContent = data.message || "Document uploaded successfully.";
+        uploadStatus.className = "upload-status success";
+        addMessage("Your document has been uploaded successfully. You can now ask questions about it.", "bot");
+      } catch (error) {
+        uploadStatus.textContent = error.message || "Upload failed. Please try again.";
+        uploadStatus.className = "upload-status error";
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = 'Upload document <span>→</span>';
+      }
     }
 
-    const formData = new FormData();
-
-    formData.append("file", pdfFile.files[0]);
-
-    uploadBtn.disabled = true;
-
-    uploadStatus.textContent = "Uploading document...";
-
-    try {
-
-        const response = await fetch("/upload", {
-
-            method: "POST",
-
-            body: formData
-
-        });
-
-        const data = await response.json();
-
-        uploadStatus.textContent = data.message;
-
-        addMessage(
-            "✅ Your document has been uploaded successfully.",
-            "bot"
-        );
-
-    }
-
-    catch (error) {
-
-        uploadStatus.textContent = "Upload failed.";
-
-        addMessage(
-            "❌ Failed to upload the document.",
-            "bot"
-        );
-
-    }
-
-    uploadBtn.disabled = false;
-
-}
-
-async function sendMessage() {
-
-    const text = input.value.trim();
-
-    if (!text)
-        return;
-
-    addMessage(text, "user");
-
-    input.value = "";
-
-    showTyping();
-
-    try {
-
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || send.disabled) return;
+      addMessage(text, "user");
+      input.value = "";
+      showTyping();
+      send.disabled = true;
+      try {
         const response = await fetch("/api/chat", {
-
-            method: "POST",
-
-            headers: {
-
-                "Content-Type": "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-                message: text
-
-            })
-
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
         });
-
-        const data = await response.json();
-
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(errorText(data, "The request could not be completed."));
         removeTyping();
-
-        addMessage(data.reply, "bot");
-
-    }
-
-    catch (error) {
-
+        addMessage(data.reply || "I couldn't generate a response. Please try again.", "bot");
+      } catch (error) {
         removeTyping();
-
-        addMessage(
-            "Unable to contact the server.",
-            "bot"
-        );
-
+        addMessage(error.message || "Unable to contact the server. Please try again.", "bot");
+      } finally {
+        send.disabled = false;
+        input.focus();
+      }
     }
 
-}
-
-uploadBtn.addEventListener("click", uploadPDF);
-
-send.addEventListener("click", sendMessage);
-
-input.addEventListener("keydown", function(e) {
-
-    if (e.key === "Enter") {
-
-        e.preventDefault();
-
-        sendMessage();
-
-    }
-
-});
-
-</script>
-
+    uploadBtn.addEventListener("click", uploadPDF);
+    chatForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage();
+    });
+    document.querySelectorAll(".suggestion").forEach((button) => {
+      button.addEventListener("click", () => {
+        input.value = button.dataset.prompt || "";
+        input.focus();
+      });
+    });
+  </script>
 </body>
-
 </html>

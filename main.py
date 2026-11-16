@@ -1,13 +1,15 @@
 import os
 import shutil
+from pathlib import Path
 
 from fastapi import (
     FastAPI,
     Request,
     UploadFile,
-    File
+    File,
+    HTTPException
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -16,31 +18,55 @@ from rag.pipeline import chat
 from rag.loader import process_pdf
 
 
+# -----------------------
+# Application
+# -----------------------
+
 app = FastAPI(
     title="ClearLegal AI",
     description="AI-powered legal information assistant",
     version="1.0.0",
 )
 
+
 # -----------------------
 # Directories
 # -----------------------
 
-UPLOAD_DIR = "uploads"
+BASE_DIR = Path(__file__).resolve().parent
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = BASE_DIR / "uploads"
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # -----------------------
 # Static Files & Templates
 # -----------------------
 
+if not STATIC_DIR.is_dir():
+    raise RuntimeError(f"Static directory not found: {STATIC_DIR}")
+
+if not TEMPLATES_DIR.is_dir():
+    raise RuntimeError(f"Templates directory not found: {TEMPLATES_DIR}")
+
 app.mount(
     "/static",
-    StaticFiles(directory="static"),
+    StaticFiles(directory=str(STATIC_DIR)),
     name="static",
 )
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(
+    directory=str(TEMPLATES_DIR)
+)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return RedirectResponse(url="/static/favicon.svg")
+
 
 # -----------------------
 # Models
@@ -84,8 +110,9 @@ async def terms(request: Request):
         name="terms.html",
     )
 
+
 # -----------------------
-# Health
+# Health Check
 # -----------------------
 
 @app.get("/health")
@@ -96,6 +123,7 @@ async def health():
         "service": "ClearLegal AI",
     }
 
+
 # -----------------------
 # Upload PDF
 # -----------------------
@@ -103,33 +131,47 @@ async def health():
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
 
-    if not file.filename.endswith(".pdf"):
-
-        return {
-            "message": "Only PDF files are allowed."
-        }
-
-    filepath = os.path.join(
-        UPLOAD_DIR,
-        file.filename
-    )
-
-    with open(filepath, "wb") as buffer:
-
-        shutil.copyfileobj(
-            file.file,
-            buffer
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed."
         )
 
-    # Build the vector database
-    process_pdf(filepath)
+    # Prevent directory traversal through uploaded filenames
+    filename = Path(file.filename).name
 
-    return {
-        "message": "PDF uploaded successfully."
-    }
+    filepath = UPLOAD_DIR / filename
+
+    try:
+
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(
+                file.file,
+                buffer
+            )
+
+        # Build the vector database
+        process_pdf(str(filepath))
+
+        return {
+            "message": "PDF uploaded successfully."
+        }
+
+    except Exception as e:
+
+        print(f"PDF upload error: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to process the uploaded PDF."
+        )
+
+    finally:
+        await file.close()
+
 
 # -----------------------
-# Chat
+# Chat API
 # -----------------------
 
 @app.post(
@@ -156,7 +198,7 @@ async def chat_endpoint(req: ChatRequest):
 
     except Exception as e:
 
-        print(e)
+        print(f"Chat error: {e}")
 
         answer = (
             "Sorry, I'm unable to generate a response "

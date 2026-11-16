@@ -15,7 +15,7 @@ ClearLegal AI lets you upload a legal document (PDF) and ask questions about it 
 - **Guardrailed responses** — restricted to legal *information* (not advice), instructed to answer only from retrieved context, capped response length, plain-text (no markdown) replies
 - **Health check endpoint** for monitoring/deployment
 
-## Tech Stack
+## Technology
 
 - **Backend:** FastAPI, Jinja2 templates, served via Uvicorn
 - **Document processing:** PyMuPDF (`fitz`) for page-level PDF text extraction, LangChain's `RecursiveCharacterTextSplitter` for chunking
@@ -25,7 +25,7 @@ ClearLegal AI lets you upload a legal document (PDF) and ask questions about it 
 - **Frontend:** Vanilla HTML/CSS
 - **Containerization:** Docker + docker-compose
 
-## API
+## Requirements
 
 | Method | Route        | Description                                                        |
 |--------|--------------|----------------------------------------------------------------------|
@@ -46,44 +46,76 @@ ClearLegal AI lets you upload a legal document (PDF) and ask questions about it 
 6. **Retrieve** — on each question, the query is embedded and the top 4 most similar chunks are pulled from ChromaDB
 7. **Generate** — retrieved passages are assembled into context and passed to Gemini 2.5 Flash, along with the legal guardrails, to produce the final answer
 
-## Getting Started
+## Configuration
 
-### Prerequisites
+Create a `.env` file in the project root:
 
-- Python 3.10+
-- An [OpenRouter](https://openrouter.ai/) API key
+```env
+key=your_openrouter_api_key_here
+```
 
-### Installation
+The application reads the API key from the `key` environment variable. Do not commit `.env` or expose the key in client-side code.
+
+## Run locally
 
 ```bash
 git clone https://github.com/Mayankk1207/ClearLegalAI.git
 cd ClearLegalAI
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-Create a `.env` file in the project root:
-
-```
-key=your_openrouter_api_key_here
-```
-
-### Run locally
-
-```bash
 uvicorn main:app --reload
 ```
 
 Visit `http://localhost:8000`, upload a PDF, then ask questions about it in the chat UI.
 
-### Run with Docker
+## Run with Docker Compose
+
+Make sure Docker Desktop is running, then:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-## Project Structure
+Open <http://localhost:8000>. Stop the service with:
 
+```bash
+docker compose down
 ```
+
+Docker Compose stores the Chroma database and uploaded PDFs in named volumes:
+
+- `chroma_data` → `/app/chroma_db`
+- `uploads_data` → `/app/uploads`
+
+These volumes keep document data available when the container is recreated. To remove the containers and stored data:
+
+```bash
+docker compose down -v
+```
+
+## API routes
+
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/` | Landing page |
+| `GET` | `/chat` | Chat interface |
+| `GET` | `/terms` | Terms & Conditions page |
+| `GET` | `/health` | Service health status |
+| `GET` | `/favicon.ico` | Redirects to the static SVG favicon |
+| `POST` | `/upload` | Upload and index a PDF document |
+| `POST` | `/api/chat` | Send `{ "message": "..." }` and receive `{ "reply": "..." }` |
+| `GET` | `/static/...` | Serves frontend static assets |
+
+Example health check:
+
+```bash
+curl http://localhost:8000/health
+```
+
+## Project structure
+
+```text
 ClearLegalAI/
 ├── main.py                  # FastAPI app, routes, upload + chat endpoints
 ├── rag/
