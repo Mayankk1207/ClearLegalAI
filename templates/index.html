@@ -128,5 +128,11 @@
     <div class="footer-links"><a href="/terms">Terms &amp; Conditions</a><a href="/terms#privacy">Privacy Policy</a></div>
     <small>© 2026 ClearLegal AI. All rights reserved.</small>
   </footer>
+  <script>
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (navigation && navigation.type === "reload") {
+      fetch("/reset", { method: "POST", keepalive: true });
+    }
+  </script>
 </body>
 </html>

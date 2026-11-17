@@ -43,7 +43,7 @@ ClearLegal AI lets you upload a legal document (PDF) and ask questions about it 
 3. **Chunk** — each page's text is split into ~700-character chunks (100-char overlap), each still tagged with its source page
 4. **Embed** — chunks are encoded with `all-MiniLM-L6-v2`
 5. **Store** — chunks, embeddings, and page metadata are persisted in a local ChromaDB collection
-6. **Retrieve** — on each question, the query is embedded and the top 4 most similar chunks are pulled from ChromaDB
+6. **Retrieve** — on each question, semantic candidates from ChromaDB and lexical candidates from BM25 are fused, then a cross-encoder reranks the combined candidates and returns the top 4 chunks
 7. **Generate** — retrieved passages are assembled into context and passed to Gemini 2.5 Flash, along with the legal guardrails, to produce the final answer
 
 ## Configuration

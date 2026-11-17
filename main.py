@@ -14,8 +14,29 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+# -----------------------
+# Directories
+# -----------------------
+
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = BASE_DIR / "uploads"
+CHROMA_DIR = BASE_DIR / "chroma_db"
+STATIC_DIR = BASE_DIR / "static"
+TEMPLATES_DIR = BASE_DIR / "templates"
+
+
+def reset_runtime_data():
+    for directory in (UPLOAD_DIR, CHROMA_DIR):
+        if directory.exists():
+            shutil.rmtree(directory)
+        directory.mkdir(parents=True, exist_ok=True)
+
+
+reset_runtime_data()
+
 from rag.pipeline import chat
 from rag.loader import process_pdf
+from rag.vectorstore import clear_collection
 
 
 # -----------------------
@@ -27,19 +48,6 @@ app = FastAPI(
     description="AI-powered legal information assistant",
     version="1.0.0",
 )
-
-
-# -----------------------
-# Directories
-# -----------------------
-
-BASE_DIR = Path(__file__).resolve().parent
-
-UPLOAD_DIR = BASE_DIR / "uploads"
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATES_DIR = BASE_DIR / "templates"
-
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # -----------------------
@@ -122,6 +130,16 @@ async def health():
         "status": "ok",
         "service": "ClearLegal AI",
     }
+
+
+@app.post("/reset")
+async def reset():
+    for filepath in UPLOAD_DIR.iterdir():
+        if filepath.is_file():
+            filepath.unlink()
+    clear_collection()
+
+    return {"message": "Runtime data reset successfully."}
 
 
 # -----------------------

@@ -69,6 +69,11 @@
   </main>
 
   <script>
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (navigation && navigation.type === "reload") {
+      fetch("/reset", { method: "POST", keepalive: true });
+    }
+
     const messages = document.getElementById("messages");
     const input = document.getElementById("message");
     const send = document.getElementById("send");

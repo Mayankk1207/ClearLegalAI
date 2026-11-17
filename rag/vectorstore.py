@@ -13,6 +13,15 @@ collection = client.get_or_create_collection(
     "legal_docs"
 )
 
+
+def clear_collection():
+    stored = collection.get(include=[])
+    ids = stored.get("ids") or []
+
+    if ids:
+        collection.delete(ids=ids)
+
+
 def add_chunks(chunks, embeddings):
 
     collection.add(

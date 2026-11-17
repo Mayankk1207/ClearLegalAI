@@ -57,5 +57,11 @@
   </main>
 
   <footer class="site-footer terms-footer"><a class="brand footer-brand" href="/"><span class="brand-mark">CL</span><span>ClearLegal<span class="brand-accent">AI</span></span></a><p>Making legal information easier to understand.</p><small>© 2026 ClearLegal AI. All rights reserved.</small></footer>
+  <script>
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (navigation && navigation.type === "reload") {
+      fetch("/reset", { method: "POST", keepalive: true });
+    }
+  </script>
 </body>
 </html>
